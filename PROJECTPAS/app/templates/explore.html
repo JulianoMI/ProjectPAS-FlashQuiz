@@ -15,22 +15,22 @@
         <div class="col-12 col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Filter Decks</h5>
-                    <form id="filterForm">
-                        <div class="mb-3">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search decks...">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Sort By</label>
-                            <select class="form-select" id="sortSelect">
-                                <option value="newest">Newest First</option>
-                                <option value="oldest">Oldest First</option>
-                                <option value="most_cards">Most Cards</option>
-                                <option value="most_studied">Most Studied</option>
-                            </select>
-                        </div>
-                    </form>
+                    <h5 class="card-title">Search & Filter</h5>
+                    <div class="mb-3">
+                        <label for="searchInput" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search decks...">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sortSelect" class="form-label">Sort by</label>
+                        <select class="form-select" id="sortSelect">
+                            <option value="newest">Newest first</option>
+                            <option value="oldest">Oldest first</option>
+                            <option value="most-studied">Most studied</option>
+                            <option value="least-studied">Least studied</option>
+                            <option value="most-cards">Most cards</option>
+                            <option value="least-cards">Least cards</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -42,7 +42,7 @@
                      data-title="{{ deck.title }}"
                      data-description="{{ deck.description }}"
                      data-cards="{{ deck.flashcards|length }}"
-                     data-studied="{{ deck.study_sessions|length }}"
+                     data-studied="{{ deck.study_sessions|selectattr('student.role', 'equalto', 'student')|list|length }}"
                      data-order="{{ deck.created_at.timestamp() }}">
                     <div class="card h-100 deck-card">
                         <div class="card-body">
@@ -77,10 +77,10 @@
                                 <br>
                                 {% if session.get('role') == 'creator' %}
                                 <span class="text-primary">
-                                    <i class="bi bi-graph-up"></i> {{ deck.study_sessions|length }} students studied
+                                    <i class="bi bi-graph-up"></i> {{ deck.study_sessions|selectattr('student.role', 'equalto', 'student')|list|length }} students studied
                                 </span>
                                 {% else %}
-                                {{ deck.study_sessions|length }} times studied
+                                {{ deck.study_sessions|selectattr('student.role', 'equalto', 'student')|list|length }} times studied
                                 {% endif %}
                             </small>
                         </div>
@@ -116,54 +116,66 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
 
-    function updateDisplay() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
+    function filterAndSortDecks() {
+        const searchTerm = searchInput.value.toLowerCase();
         const sortBy = sortSelect.value;
         
-        let visibleDecks = deckItems.filter(item => {
-            const title = item.dataset.title.toLowerCase();
-            const description = item.dataset.description.toLowerCase();
+        let filteredDecks = deckItems.filter(deck => {
+            const title = deck.dataset.title.toLowerCase();
+            const description = deck.dataset.description.toLowerCase();
             return title.includes(searchTerm) || description.includes(searchTerm);
         });
-
-        visibleDecks.sort((a, b) => {
+        
+        filteredDecks.sort((a, b) => {
             switch(sortBy) {
                 case 'newest':
                     return b.dataset.order - a.dataset.order;
                 case 'oldest':
                     return a.dataset.order - b.dataset.order;
-                case 'most_cards':
-                    return parseInt(b.dataset.cards) - parseInt(a.dataset.cards);
-                case 'most_studied':
-                    return parseInt(b.dataset.studied) - parseInt(a.dataset.studied);
+                case 'most-studied':
+                    return b.dataset.studied - a.dataset.studied;
+                case 'least-studied':
+                    return a.dataset.studied - b.dataset.studied;
+                case 'most-cards':
+                    return b.dataset.cards - a.dataset.cards;
+                case 'least-cards':
+                    return a.dataset.cards - b.dataset.cards;
                 default:
                     return 0;
             }
         });
-
+        
         decksContainer.innerHTML = '';
-        if (visibleDecks.length === 0) {
-            decksContainer.appendChild(noResultsMessage);
+        if (filteredDecks.length > 0) {
+            filteredDecks.forEach(deck => decksContainer.appendChild(deck));
         } else {
-            visibleDecks.forEach(deck => decksContainer.appendChild(deck));
+            decksContainer.appendChild(noResultsMessage.cloneNode(true));
         }
     }
-
-    searchInput.addEventListener('input', updateDisplay);
-    sortSelect.addEventListener('change', updateDisplay);
-    updateDisplay();
+    
+    searchInput.addEventListener('input', filterAndSortDecks);
+    sortSelect.addEventListener('change', filterAndSortDecks);
 });
 
 function deleteDeck(deckId) {
     if (confirm('Are you sure you want to delete this deck? This action cannot be undone.')) {
         fetch(`/deck/${deckId}`, {
             method: 'DELETE',
-        }).then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                alert('Failed to delete deck. Please try again.');
+            headers: {
+                'Content-Type': 'application/json'
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the deck.');
         });
     }
 }

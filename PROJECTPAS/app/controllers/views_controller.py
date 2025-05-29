@@ -144,6 +144,11 @@ def study_deck(deck_id):
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
+    # Prevent teachers from studying decks
+    if session.get('role') == 'creator':
+        flash('Teachers cannot study decks. You can preview them instead.', 'error')
+        return redirect(url_for('views.explore_decks'))
+
     deck = FlashcardDeck.query.get_or_404(deck_id)
     card_index = request.args.get('card', 0, type=int)
     
@@ -183,6 +188,10 @@ def review_card(deck_id, card_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
 
+    # Prevent teachers from reviewing cards
+    if session.get('role') == 'creator':
+        return jsonify({'error': 'Teachers cannot study decks'}), 403
+
     # Get or create study session
     study_session = StudySession.query.filter_by(
         user_id=session['user_id'],
@@ -207,6 +216,10 @@ def review_card(deck_id, card_id):
 def complete_study_session(deck_id):
     if 'user_id' not in session:
         return jsonify({'error': 'Unauthorized'}), 401
+
+    # Prevent teachers from completing study sessions
+    if session.get('role') == 'creator':
+        return jsonify({'error': 'Teachers cannot study decks'}), 403
 
     session_record = StudySession.query.filter_by(
         user_id=session['user_id'],
@@ -243,35 +256,44 @@ def analytics():
                   .filter(FlashcardDeck.creator_id == session['user_id'])
                   .count())
     
-    # Get unique students who studied teacher's decks
+    # Get unique students who studied teacher's decks (excluding other teachers)
     student_subq = (db.session.query(StudySession.user_id)
                    .join(FlashcardDeck)
+                   .join(User, User.id == StudySession.user_id)
                    .filter(FlashcardDeck.creator_id == session['user_id'])
+                   .filter(User.role == 'student')  # Only count students
                    .distinct()
                    .subquery())
     
     total_students = db.session.query(func.count()).select_from(student_subq).scalar()
     
+    # Get total study sessions by students (excluding teachers)
     total_sessions = (StudySession.query
                      .join(FlashcardDeck)
+                     .join(User, User.id == StudySession.user_id)
                      .filter(FlashcardDeck.creator_id == session['user_id'])
+                     .filter(User.role == 'student')  # Only count student sessions
                      .count())
     
     # Get deck performance data
     decks = FlashcardDeck.query.filter_by(creator_id=session['user_id']).all()
     for deck in decks:
-        # Calculate unique students
+        # Calculate unique students (excluding teachers)
         deck.unique_students = (StudySession.query
-                              .filter_by(deck_id=deck.id)
+                              .join(User, User.id == StudySession.user_id)
+                              .filter(StudySession.deck_id == deck.id)
+                              .filter(User.role == 'student')  # Only count students
                               .distinct(StudySession.user_id)
                               .count())
         
-        # Calculate average completion rate
-        completed_sessions = sum(1 for session in deck.study_sessions if session.completed_at)
-        total_sessions = len(deck.study_sessions)
+        # Calculate average completion rate (for student sessions only)
+        student_sessions = [session for session in deck.study_sessions 
+                          if session.student.role == 'student']  # Filter out teacher sessions
+        completed_sessions = sum(1 for session in student_sessions if session.completed_at)
+        total_sessions = len(student_sessions)
         deck.avg_completion = round((completed_sessions / total_sessions * 100) if total_sessions > 0 else 0)
     
-    # Get student progress data
+    # Get student progress data (excluding teachers)
     student_alias = aliased(User)
     students = (db.session.query(student_alias,
                                func.count(distinct(StudySession.deck_id)).label('decks_studied'),
@@ -280,6 +302,7 @@ def analytics():
                .join(StudySession, StudySession.user_id == student_alias.id)
                .join(FlashcardDeck, FlashcardDeck.id == StudySession.deck_id)
                .filter(FlashcardDeck.creator_id == session['user_id'])
+               .filter(student_alias.role == 'student')  # Only include students
                .group_by(student_alias.id)
                .all())
     
@@ -292,11 +315,12 @@ def analytics():
             'last_active': last_active
         })
     
-    # Get recent activity
+    # Get recent activity (excluding teacher activity)
     recent_activity = (StudySession.query
                       .join(FlashcardDeck)
                       .join(User, User.id == StudySession.user_id)
                       .filter(FlashcardDeck.creator_id == session['user_id'])
+                      .filter(User.role == 'student')  # Only show student activity
                       .order_by(desc(StudySession.started_at))
                       .limit(10)
                       .all())
@@ -310,15 +334,15 @@ def analytics():
             'action': action,
             'deck': activity.deck
         })
-    
+
     return render_template('analytics.html',
                          total_decks=total_decks,
                          total_cards=total_cards,
                          total_students=total_students,
                          total_sessions=total_sessions,
                          decks=decks,
-                         students=student_data,
-                         recent_activity=activity_data)
+                         student_data=student_data,
+                         activity_data=activity_data)
 
 @views_bp.route('/deck/<int:deck_id>/preview')
 def preview_deck(deck_id):
@@ -344,17 +368,20 @@ def deck_details(deck_id):
         flash('You can only view details of your own decks.', 'error')
         return redirect(url_for('views.analytics'))
     
-    # Get detailed statistics
-    total_sessions = len(deck.study_sessions)
-    completed_sessions = sum(1 for session in deck.study_sessions if session.completed_at)
+    # Get detailed statistics (only for student sessions)
+    student_sessions = [session for session in deck.study_sessions 
+                       if session.student.role == 'student']  # Filter out teacher sessions
+    total_sessions = len(student_sessions)
+    completed_sessions = sum(1 for session in student_sessions if session.completed_at)
     completion_rate = round((completed_sessions / total_sessions * 100) if total_sessions > 0 else 0)
     
-    # Get student performance
+    # Get student performance (excluding teachers)
     student_performance = (db.session.query(User,
                                           func.count(StudySession.id).label('sessions'),
                                           func.sum(case((StudySession.completed_at != None, 1), else_=0)).label('completed'))
                          .join(StudySession, StudySession.user_id == User.id)
                          .filter(StudySession.deck_id == deck_id)
+                         .filter(User.role == 'student')  # Only include students
                          .group_by(User.id)
                          .all())
     

@@ -21,8 +21,8 @@ FlashQuiz is a web-based flashcard application that helps users learn and memori
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/JulianoMI/ProjectPAS-FlashQuiz.git
-cd ProjectPAS-FlashQuiz
+git clone https://github.com/JulianoMI/PASCODING-FlashQuiz.git
+cd PASCODING-FlashQuiz
 ```
 
 2. Create a virtual environment:
@@ -33,7 +33,7 @@ python -m venv .venv
 3. Activate the virtual environment:
 - On Windows:
 ```bash
-.venv\Scripts\activate
+source .venv/Scripts/activate
 ```
 - On macOS/Linux:
 ```bash
@@ -59,13 +59,21 @@ Replace `your-secret-key-here` with a secure secret key.
 
 ## Database Setup
 
-The database will be automatically created when you first run the application, but you can manually initialize it with:
+The application uses SQLite as the database. The database file (data.db) is automatically created in the project root directory when you first run the application.
 
+1. Make sure your virtual environment is activated:
 ```bash
-flask db init
-flask db migrate
-flask db upgrade
+source .venv/bin/activate  # On Linux/Mac
+# OR
+.venv\Scripts\activate    # On Windows
 ```
+
+2. The database will be automatically initialized when you run the application:
+```bash
+flask run
+```
+
+Note: The database schema is managed through SQLAlchemy models, and the tables will be created automatically when the application first runs. You don't need to run any additional database commands.
 
 ## Running the Application
 
@@ -115,4 +123,4 @@ PROJECTPAS/
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details. # PASCODING-FlashQuiz
