@@ -1,6 +1,6 @@
 # FlashQuiz
 
-FlashQuiz is a web-based flashcard application that helps users learn and memorize information through interactive flashcards. It supports both learners and content creators, allowing creators to make custom flashcard decks and learners to study them.
+FlashQuiz is a web-based flashcard application that helps users learn and memorize information through interactive flashcards. It supports both learners and creators/teachers, allowing creators to make custom flashcard decks and learners to study them.
 
 ## Features
 
@@ -8,14 +8,8 @@ FlashQuiz is a web-based flashcard application that helps users learn and memori
 - Create, edit, and delete flashcard decks
 - Interactive flashcard study sessions
 - Progress tracking for learners
-- Analytics for content creators
+- Analytics for creators/teachers
 - Explore public flashcard decks
-
-## Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package installer)
-- Git
 
 ## Installation
 
@@ -113,6 +107,7 @@ PROJECTPAS/
 └── run.py
 ```
 
+<<<<<<< HEAD
 ## Contributing
 
 1. Fork the repository
@@ -124,3 +119,5 @@ PROJECTPAS/
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. # PASCODING-FlashQuiz
+=======
+>>>>>>> e99a7a3a61104ad17e7256a4a036ad55262fea1e
