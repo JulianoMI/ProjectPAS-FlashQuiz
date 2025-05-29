@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Study {{ deck.title }} - FlashQuiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">{{ deck.title }}</h1>
+            <p class="text-muted">{{ deck.description }}</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="progress mb-4">
+                <div class="progress-bar" role="progressbar" style="width: {{ (current_card_index / total_cards) * 100 }}%"></div>
+            </div>
+
+            <div class="flashcard {% if show_answer %}flipped{% endif %}" data-card-id="{{ current_card.id }}">
+                <div class="flashcard-inner">
+                    <div class="flashcard-front">
+                        <div class="content">
+                            <h3>{{ current_card.front }}</h3>
+                            {% if current_card.hint %}
+                            <div class="hint mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-lightbulb"></i> Hint: {{ current_card.hint }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flashcard-back">
+                        <div class="content">
+                            <h3>{{ current_card.back }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button class="btn btn-outline-primary" onclick="previousCard()" {% if current_card_index == 0 %}disabled{% endif %}>
+                    <i class="bi bi-arrow-left"></i> Previous
+                </button>
+                <div>
+                    <button class="btn btn-primary" onclick="toggleCard()">
+                        <i class="bi bi-arrow-repeat"></i> Flip Card
+                    </button>
+                </div>
+                <button class="btn btn-outline-primary" onclick="nextCard()" {% if current_card_index == total_cards - 1 %}disabled{% endif %}>
+                    Next <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="text-center mt-4">
+                <p>Card {{ current_card_index + 1 }} of {{ total_cards }}</p>
+                {% if current_card_index == total_cards - 1 %}
+                <button class="btn btn-success mt-3" onclick="completeSession()">
+                    <i class="bi bi-check-circle"></i> Complete Session
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleCard() {
+    const card = document.querySelector('.flashcard');
+    card.classList.toggle('flipped');
+    
+    // Record card review
+    fetch(`/deck/{{ deck.id }}/card/${card.dataset.cardId}/review`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+}
+
+function previousCard() {
+    if ({{ current_card_index }} > 0) {
+        window.location.href = "{{ url_for('views.study_deck', deck_id=deck.id) }}?card={{ current_card_index - 1 }}";
+    }
+}
+
+function nextCard() {
+    if ({{ current_card_index }} < {{ total_cards - 1 }}) {
+        window.location.href = "{{ url_for('views.study_deck', deck_id=deck.id) }}?card={{ current_card_index + 1 }}";
+    }
+}
+
+function completeSession() {
+    fetch("{{ url_for('views.complete_study_session', deck_id=deck.id) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = "{{ url_for('views.my_progress') }}";
+        }
+    });
+}
+
+// Enable keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (e.code === 'Space') {
+        toggleCard();
+        e.preventDefault();
+    } else if (e.code === 'ArrowLeft' && {{ current_card_index }} > 0) {
+        previousCard();
+    } else if (e.code === 'ArrowRight' && {{ current_card_index }} < {{ total_cards - 1 }}) {
+        nextCard();
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}{% if deck %}Edit{% else %}Create{% endif %} Deck - FlashQuiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="h2 mb-4">{% if deck %}Edit{% else %}Create{% endif %} Flashcard Deck</h1>
+
+            <form method="POST" id="deckForm">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Deck Title</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                value="{{ deck.title if deck else '' }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3">{{ deck.description if deck else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Flashcards</h5>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="addCard()">
+                            <i class="bi bi-plus-circle"></i> Add Card
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="flashcards">
+                            {% if deck and deck.flashcards %}
+                                {% for card in deck.flashcards %}
+                                <div class="card mb-3 flashcard-edit">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-5">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Front</label>
+                                                    <textarea class="form-control" name="fronts[]" required>{{ card.front }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-5">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Back</label>
+                                                    <textarea class="form-control" name="backs[]" required>{{ card.back }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <button type="button" class="btn btn-outline-danger btn-sm mt-4" onclick="removeCard(this)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-10">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Hint (optional)</label>
+                                                    <input type="text" class="form-control" name="hints[]" value="{{ card.hint }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-4">
+                    <a href="{{ url_for('views.decks') }}" class="btn btn-outline-secondary me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Save Deck</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<template id="cardTemplate">
+    <div class="card mb-3 flashcard-edit">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label class="form-label">Front</label>
+                        <textarea class="form-control" name="fronts[]" required></textarea>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="mb-3">
+                        <label class="form-label">Back</label>
+                        <textarea class="form-control" name="backs[]" required></textarea>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-4" onclick="removeCard(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="mb-3">
+                        <label class="form-label">Hint (optional)</label>
+                        <input type="text" class="form-control" name="hints[]">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+function addCard() {
+    const template = document.getElementById('cardTemplate');
+    const flashcardsContainer = document.getElementById('flashcards');
+    const newCard = template.content.cloneNode(true);
+    flashcardsContainer.appendChild(newCard);
+}
+
+function removeCard(button) {
+    const card = button.closest('.flashcard-edit');
+    card.remove();
+}
+
+// Add at least one card if creating a new deck
+document.addEventListener('DOMContentLoaded', function() {
+    const flashcardsContainer = document.getElementById('flashcards');
+    if (flashcardsContainer.children.length === 0) {
+        addCard();
+    }
+});
+
+// Form validation
+document.getElementById('deckForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const flashcards = document.querySelectorAll('.flashcard-edit');
+    if (flashcards.length === 0) {
+        alert('Please add at least one flashcard to the deck.');
+        return;
+    }
+    this.submit();
+});
+</script>
+{% endblock %} 

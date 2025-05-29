@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deck.title }} Analytics - FlashQuiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">{{ deck.title }} Analytics</h1>
+            <p class="text-muted">Detailed performance metrics for your deck</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Overall Stats -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Performance Overview</h5>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <h3>{{ total_sessions }}</h3>
+                                <p class="text-muted">Total Study Sessions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <h3>{{ completed_sessions }}</h3>
+                                <p class="text-muted">Completed Sessions</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3">
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <div class="progress" style="width: 100px; height: 100px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: {{ completion_rate }}%"
+                                             aria-valuenow="{{ completion_rate }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ completion_rate }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-muted mt-2">Completion Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Performance -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Student Performance</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Total Sessions</th>
+                                    <th>Completed</th>
+                                    <th>Completion Rate</th>
+                                    <th>Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in student_performance %}
+                                <tr>
+                                    <td>{{ student.username }}</td>
+                                    <td>{{ student.sessions }}</td>
+                                    <td>{{ student.completed }}</td>
+                                    <td>{{ student.completion_rate }}%</td>
+                                    <td style="width: 200px;">
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ student.completion_rate }}%"
+                                                 aria-valuenow="{{ student.completion_rate }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ student.completion_rate }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No students have studied this deck yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col text-center">
+            <a href="{{ url_for('views.edit_deck', deck_id=deck.id) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Edit Deck
+            </a>
+            <a href="{{ url_for('views.preview_deck', deck_id=deck.id) }}" class="btn btn-outline-primary ms-2">
+                <i class="bi bi-eye"></i> Preview Deck
+            </a>
+            <a href="{{ url_for('views.analytics') }}" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Back to Analytics
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress {
+    height: 20px;
+    border-radius: 10px;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}My Progress - FlashQuiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">My Learning Journey</h1>
+            <p class="text-muted">Track your progress and revisit decks you've studied</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for stats in deck_stats %}
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title mb-0">{{ stats.deck.title }}</h5>
+                        <span class="badge bg-primary rounded-pill">
+                            {{ stats.deck.flashcards|length }} cards
+                        </span>
+                    </div>
+                    
+                    <p class="card-text text-muted small mb-3">{{ stats.deck.description }}</p>
+                    
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ (stats.completed_sessions / stats.total_sessions * 100) if stats.total_sessions > 0 else 0 }}%">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <small class="text-muted">Study Sessions</small>
+                        <span class="badge bg-light text-dark">
+                            {{ stats.completed_sessions }}/{{ stats.total_sessions }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <small class="text-muted">Last Studied</small>
+                        <span class="badge bg-light text-dark">
+                            {{ stats.last_studied.strftime('%Y-%m-%d') }}
+                        </span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('views.study_deck', deck_id=stats.deck.id) }}" class="btn btn-primary">
+                            <i class="bi bi-play-fill"></i> Continue Learning
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <small class="text-muted">
+                        Created by {{ stats.deck.creator.username }}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="text-muted">
+                <i class="bi bi-journal-text display-1 mb-3"></i>
+                <h3>No Study History Yet</h3>
+                <p>Start learning by exploring available flashcard decks</p>
+                <a href="{{ url_for('views.explore_decks') }}" class="btn btn-primary mt-3">
+                    <i class="bi bi-search"></i> Explore Decks
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

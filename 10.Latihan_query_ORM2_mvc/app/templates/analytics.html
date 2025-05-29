@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - FlashQuiz{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">Analytics Dashboard</h1>
+            <p class="text-muted">Track student engagement and deck performance</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Overall Stats -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Overall Statistics</h5>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <h3>{{ total_decks }}</h3>
+                            <p class="text-muted">Total Decks</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3>{{ total_cards }}</h3>
+                            <p class="text-muted">Total Cards</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3>{{ total_students }}</h3>
+                            <p class="text-muted">Active Students</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h3>{{ total_sessions }}</h3>
+                            <p class="text-muted">Study Sessions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deck Performance -->
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Deck Performance</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Deck Name</th>
+                                    <th>Cards</th>
+                                    <th>Students</th>
+                                    <th>Sessions</th>
+                                    <th>Avg. Completion</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for deck in decks %}
+                                <tr>
+                                    <td>{{ deck.title }}</td>
+                                    <td>{{ deck.flashcards|length }}</td>
+                                    <td>{{ deck.unique_students }}</td>
+                                    <td>{{ deck.study_sessions|length }}</td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ deck.avg_completion }}%"
+                                                 aria-valuenow="{{ deck.avg_completion }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ deck.avg_completion }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('views.deck_details', deck_id=deck.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-bar-chart"></i> Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Progress -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Student Progress</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Decks Studied</th>
+                                    <th>Total Sessions</th>
+                                    <th>Last Active</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in students %}
+                                <tr>
+                                    <td>{{ student.username }}</td>
+                                    <td>{{ student.decks_studied }}</td>
+                                    <td>{{ student.total_sessions }}</td>
+                                    <td>{{ student.last_active.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activity</h5>
+                    <div class="activity-feed">
+                        {% for activity in recent_activity %}
+                        <div class="activity-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <small class="text-muted me-2">
+                                    {{ activity.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                </small>
+                                <span>
+                                    {{ activity.student.username }} 
+                                    {{ activity.action }}
+                                    <strong>{{ activity.deck.title }}</strong>
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
