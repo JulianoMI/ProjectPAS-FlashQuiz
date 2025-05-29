@@ -36,7 +36,11 @@ def login():
             session['user_id'] = user.id
             session['role'] = user.role
             flash('Login successful!', 'success')
-            return redirect(url_for('views.decks'))
+            # Redirect based on user role
+            if user.role == 'creator':
+                return redirect(url_for('views.decks'))
+            else:
+                return redirect(url_for('views.my_progress'))
         
         flash('Invalid username or password.', 'error')
         return redirect(url_for('auth.login'))
